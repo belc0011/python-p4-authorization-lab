@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pdb
 from flask import Flask, make_response, jsonify, request, session
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
@@ -87,12 +88,27 @@ class CheckSession(Resource):
 class MemberOnlyIndex(Resource):
     
     def get(self):
-        pass
+        if not session['user_id']:
+            response = make_response({'error': 'unauthorized'}, 401)
+            return response
+        articles = [article.to_dict() for article in Article.query.all()]
+        member_only_list = []
+        for article in articles:
+            if article['is_member_only']:
+                member_only_list.append(article)
+        return make_response(jsonify(member_only_list), 200)
 
 class MemberOnlyArticle(Resource):
     
     def get(self, id):
-        pass
+        if not session['user_id']:
+            response = make_response({'error': 'unauthorized'}, 401)
+            return response
+        else:
+            article = Article.query.filter(Article.id == id).first()
+            response = make_response(article.to_dict(), 200)
+
+            return response
 
 api.add_resource(ClearSession, '/clear', endpoint='clear')
 api.add_resource(IndexArticle, '/articles', endpoint='article_list')
